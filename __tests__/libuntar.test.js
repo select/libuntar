@@ -1,15 +1,19 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { tarGetEntries, tarGetEntryData } from '../libuntar.js';
 import { readFileSync } from 'fs';
-import { inflate } from 'pako';
 
 describe('libuntar with real tar.gz file', () => {
 	let tarBuffer;
 
 	// Load and decompress the real tar.gz file before tests
-	const gzipData = readFileSync('./test-fixtures/sample.tar.gz');
-	const decompressed = inflate(gzipData);
-	tarBuffer = decompressed.buffer;
+	beforeAll(async () => {
+		const gzipData = readFileSync('./test-fixtures/sample.tar.gz');
+		const blob = new Blob([gzipData]);
+		const decompressedStream = blob
+			.stream()
+			.pipeThrough(new DecompressionStream('gzip'));
+		tarBuffer = await new Response(decompressedStream).arrayBuffer();
+	});
 
 	describe('tarGetEntries', () => {
 		it('should extract all entries from real tar file', () => {
