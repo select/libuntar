@@ -9,7 +9,9 @@
 		"lint": "oxlint .",
 		"lint:fix": "oxlint --fix .",
 		"format": "prettier --write .",
-		"format:check": "prettier --check ."
+		"format:check": "prettier --check .",
+		"build": "tsc",
+		"typecheck": "tsc --noEmit"
 	},
 	"type": "module",
 	"keywords": [],
@@ -17,9 +19,11 @@
 	"license": "ISC",
 	"packageManager": "pnpm@10.19.0",
 	"devDependencies": {
+		"@types/node": "^24.9.2",
 		"oxlint": "^1.24.0",
 		"pako": "^2.1.0",
 		"prettier": "^3.6.2",
+		"typescript": "^5.9.3",
 		"vitest": "^4.0.4"
 	}
 }
