@@ -13,14 +13,6 @@ const TAR_SIZE_SIZE = 12;
 const TAR_NAME_OFFSET = 0;
 const TAR_NAME_SIZE = 100;
 
-function saneMap(array, cb) {
-	const retval = Array.from({ length: array.length });
-	for (let i = 0; i < retval.length; ++i) {
-		retval[i] = cb(array[i]);
-	}
-	return retval;
-}
-
 function _tarRead(view, offset, size) {
 	return view.slice(offset, offset + size);
 }
