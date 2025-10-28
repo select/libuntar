@@ -13,14 +13,21 @@ const TAR_SIZE_SIZE = 12;
 const TAR_NAME_OFFSET = 0;
 const TAR_NAME_SIZE = 100;
 
-function _tarRead(view, offset, size) {
+export interface TarEntry {
+	name: string;
+	size: number;
+	is_file: boolean;
+	offset: number;
+}
+
+function _tarRead(view: Uint8Array, offset: number, size: number): Uint8Array {
 	return view.slice(offset, offset + size);
 }
 
-export function tarGetEntries(arrayBuffer) {
+export function tarGetEntries(arrayBuffer: ArrayBuffer): TarEntry[] {
 	const view = new Uint8Array(arrayBuffer);
 	let offset = 0;
-	const entries = [];
+	const entries: TarEntry[] = [];
 
 	while (offset + TAR_HEADER_SIZE < view.byteLength) {
 		// Get entry name
@@ -48,7 +55,7 @@ export function tarGetEntries(arrayBuffer) {
 		// Save this as en entry if it is a file or directory
 		if ([TAR_TYPE_FILE, TAR_TYPE_DIR].includes(entryType)) {
 			entries.push({
-				name: `${entryName}`,
+				name: entryName,
 				size: entrySize,
 				is_file: entryType === TAR_TYPE_FILE,
 				offset,
@@ -66,7 +73,10 @@ export function tarGetEntries(arrayBuffer) {
 	return entries;
 }
 
-export function tarGetEntryData(entry, arrayBuffer) {
+export function tarGetEntryData(
+	entry: TarEntry,
+	arrayBuffer: ArrayBuffer,
+): Uint8Array {
 	return _tarRead(
 		new Uint8Array(arrayBuffer),
 		entry.offset + TAR_HEADER_SIZE,

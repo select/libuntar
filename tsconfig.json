@@ -12,9 +12,9 @@
 		"allowJs": true,
 		"declaration": true,
 		"declarationMap": true,
-		"outDir": "./dist",
-		"rootDir": "./"
+		"emitDeclarationOnly": true,
+		"outDir": "./dist"
 	},
-	"include": ["**/*.ts", "**/*.js"],
-	"exclude": ["node_modules", "dist"]
+	"include": ["libuntar.ts", "untgz.ts"],
+	"exclude": ["node_modules", "dist", "__tests__"]
 }

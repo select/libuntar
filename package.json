@@ -1,8 +1,25 @@
 {
 	"name": "libuntar",
 	"version": "1.0.0",
-	"description": "",
-	"main": "index.js",
+	"description": "Extract files from tar.gz archives in the browser using native APIs",
+	"main": "./dist/libuntar.cjs",
+	"module": "./dist/libuntar.js",
+	"types": "./dist/libuntar.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/libuntar.d.ts",
+			"import": "./dist/libuntar.js",
+			"require": "./dist/libuntar.cjs"
+		},
+		"./untgz": {
+			"types": "./dist/untgz.d.ts",
+			"import": "./dist/untgz.js",
+			"require": "./dist/untgz.cjs"
+		}
+	},
+	"files": [
+		"dist"
+	],
 	"scripts": {
 		"test": "vitest run",
 		"test:watch": "vitest",
@@ -10,8 +27,9 @@
 		"lint:fix": "oxlint --fix .",
 		"format": "prettier --write .",
 		"format:check": "prettier --check .",
-		"build": "tsc",
-		"typecheck": "tsc --noEmit"
+		"build": "vite build && tsc --emitDeclarationOnly --outDir dist",
+		"typecheck": "tsc --noEmit",
+		"prepublishOnly": "pnpm run build"
 	},
 	"type": "module",
 	"keywords": [],
@@ -23,6 +41,7 @@
 		"oxlint": "^1.24.0",
 		"prettier": "^3.6.2",
 		"typescript": "^5.9.3",
+		"vite": "^7.1.12",
 		"vitest": "^4.0.4"
 	}
 }
