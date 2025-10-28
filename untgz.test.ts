@@ -1,0 +1,125 @@
+import { describe, it, expect } from 'vitest';
+import { untgz } from './untgz';
+import { tarGetEntryData } from './libuntar.js';
+import { readFileSync } from 'fs';
+
+describe('untgz', () => {
+	it('should decompress and extract entries from a tar.gz file', async () => {
+		// Load the test tar.gz file as a Blob
+		const fileBuffer = readFileSync('./test-fixtures/sample.tar.gz');
+		const blob = new Blob([fileBuffer]);
+
+		// Call untgz
+		const result = await untgz(blob);
+
+		// Should have arrayBuffer and nodes
+		expect(result.arrayBuffer).toBeDefined();
+		expect(result.arrayBuffer instanceof ArrayBuffer).toBe(true);
+		expect(result.nodes).toBeDefined();
+		expect(Array.isArray(result.nodes)).toBe(true);
+
+		// Should have multiple entries
+		expect(result.nodes.length).toBeGreaterThan(0);
+	});
+
+	it('should filter out MacOS garbage files', async () => {
+		const fileBuffer = readFileSync('./test-fixtures/sample.tar.gz');
+		const blob = new Blob([fileBuffer]);
+
+		const result = await untgz(blob);
+
+		// Check that no entries contain ._ or PaxHeader
+		result.nodes.forEach((node) => {
+			expect(node.name).not.toContain('._');
+			expect(node.name).not.toContain('PaxHeader');
+		});
+	});
+
+	it('should extract correct file entries', async () => {
+		const fileBuffer = readFileSync('./test-fixtures/sample.tar.gz');
+		const blob = new Blob([fileBuffer]);
+
+		const result = await untgz(blob);
+
+		// Verify we have expected files
+		const fileNames = result.nodes.map((n) => n.name);
+		expect(fileNames).toContain('sample-data/file1.txt');
+		expect(fileNames).toContain('sample-data/file2.txt');
+		expect(fileNames).toContain('sample-data/README.md');
+		expect(fileNames).toContain('sample-data/nested/deep.txt');
+	});
+
+	it('should provide valid arrayBuffer for extracting file data', async () => {
+		const fileBuffer = readFileSync('./test-fixtures/sample.tar.gz');
+		const blob = new Blob([fileBuffer]);
+
+		const result = await untgz(blob);
+
+		// Find a file entry
+		const file1 = result.nodes.find((n) => n.name === 'sample-data/file1.txt');
+		expect(file1).toBeDefined();
+
+		// Extract the file data using the arrayBuffer
+		const data = tarGetEntryData(file1!, result.arrayBuffer);
+		const content = new TextDecoder().decode(data);
+
+		expect(content).toContain('Hello World!');
+		expect(content).toContain('This is the first test file.');
+	});
+
+	it('should handle all files in the tar.gz correctly', async () => {
+		const fileBuffer = readFileSync('./test-fixtures/sample.tar.gz');
+		const blob = new Blob([fileBuffer]);
+
+		const result = await untgz(blob);
+
+		// Extract and verify all text files
+		const files = result.nodes.filter((n) => n.is_file);
+
+		files.forEach((file) => {
+			const data = tarGetEntryData(file, result.arrayBuffer);
+			expect(data).toBeDefined();
+
+			if (file.size > 0) {
+				expect(data.length).toBe(file.size);
+			}
+		});
+	});
+
+	it('should include both files and directories in nodes', async () => {
+		const fileBuffer = readFileSync('./test-fixtures/sample.tar.gz');
+		const blob = new Blob([fileBuffer]);
+
+		const result = await untgz(blob);
+
+		const files = result.nodes.filter((n) => n.is_file);
+		const directories = result.nodes.filter((n) => !n.is_file);
+
+		expect(files.length).toBeGreaterThan(0);
+		expect(directories.length).toBeGreaterThan(0);
+	});
+
+	it('should properly structure the return object', async () => {
+		const fileBuffer = readFileSync('./test-fixtures/sample.tar.gz');
+		const blob = new Blob([fileBuffer]);
+
+		const result = await untgz(blob);
+
+		// Check structure
+		expect(result).toHaveProperty('arrayBuffer');
+		expect(result).toHaveProperty('nodes');
+
+		// Verify nodes have proper structure
+		result.nodes.forEach((node) => {
+			expect(node).toHaveProperty('name');
+			expect(node).toHaveProperty('size');
+			expect(node).toHaveProperty('is_file');
+			expect(node).toHaveProperty('offset');
+
+			expect(typeof node.name).toBe('string');
+			expect(typeof node.size).toBe('number');
+			expect(typeof node.is_file).toBe('boolean');
+			expect(typeof node.offset).toBe('number');
+		});
+	});
+});
