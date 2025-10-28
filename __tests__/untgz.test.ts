@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { untgz } from './untgz';
-import { tarGetEntryData } from './libuntar.js';
+import { untgz } from '../untgz';
+import { tarGetEntryData } from '../libuntar.js';
 import { readFileSync } from 'fs';
 
 describe('untgz', () => {

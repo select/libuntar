@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { tarGetEntries, tarGetEntryData } from './libuntar.js';
+import { tarGetEntries, tarGetEntryData } from '../libuntar.js';
 import { readFileSync } from 'fs';
 import { inflate } from 'pako';
 

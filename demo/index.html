@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>libuntar Demo</title>
+		<style>
+			* {
+				box-sizing: border-box;
+				margin: 0;
+				padding: 0;
+			}
+
+			body {
+				font-family:
+					-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
+					Cantarell, sans-serif;
+				line-height: 1.6;
+				padding: 2rem;
+				max-width: 1200px;
+				margin: 0 auto;
+				background: #f5f5f5;
+			}
+
+			h1 {
+				color: #333;
+				margin-bottom: 1rem;
+			}
+
+			h2 {
+				color: #555;
+				margin-top: 2rem;
+				margin-bottom: 1rem;
+			}
+
+			.container {
+				background: white;
+				padding: 2rem;
+				border-radius: 8px;
+				box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+			}
+
+			.upload-section {
+				margin-bottom: 2rem;
+				padding: 1.5rem;
+				border: 2px dashed #ddd;
+				border-radius: 8px;
+				text-align: center;
+			}
+
+			.upload-section:hover {
+				border-color: #999;
+			}
+
+			input[type='file'] {
+				margin: 1rem 0;
+			}
+
+			button {
+				background: #007bff;
+				color: white;
+				border: none;
+				padding: 0.75rem 1.5rem;
+				border-radius: 4px;
+				cursor: pointer;
+				font-size: 1rem;
+				transition: background 0.2s;
+			}
+
+			button:hover {
+				background: #0056b3;
+			}
+
+			button:disabled {
+				background: #ccc;
+				cursor: not-allowed;
+			}
+
+			.file-list {
+				margin-top: 1rem;
+			}
+
+			.file-item {
+				padding: 0.75rem;
+				margin: 0.5rem 0;
+				background: #f8f9fa;
+				border-radius: 4px;
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				transition: background 0.2s;
+			}
+
+			.file-item:hover {
+				background: #e9ecef;
+			}
+
+			.file-name {
+				font-weight: 500;
+				color: #333;
+				flex: 1;
+			}
+
+			.file-meta {
+				color: #666;
+				font-size: 0.875rem;
+				margin-left: 1rem;
+			}
+
+			.file-type {
+				padding: 0.25rem 0.5rem;
+				border-radius: 4px;
+				font-size: 0.75rem;
+				font-weight: 600;
+				margin-left: 0.5rem;
+			}
+
+			.file-type.file {
+				background: #d4edda;
+				color: #155724;
+			}
+
+			.file-type.dir {
+				background: #d1ecf1;
+				color: #0c5460;
+			}
+
+			.view-btn {
+				padding: 0.5rem 1rem;
+				font-size: 0.875rem;
+				margin-left: 1rem;
+			}
+
+			.content-viewer {
+				margin-top: 2rem;
+				padding: 1rem;
+				background: #f8f9fa;
+				border-radius: 4px;
+				border: 1px solid #dee2e6;
+			}
+
+			.content-header {
+				font-weight: 600;
+				color: #495057;
+				margin-bottom: 0.5rem;
+			}
+
+			.content-body {
+				white-space: pre-wrap;
+				font-family: 'Courier New', monospace;
+				font-size: 0.875rem;
+				color: #212529;
+				background: white;
+				padding: 1rem;
+				border-radius: 4px;
+				max-height: 400px;
+				overflow-y: auto;
+			}
+
+			.stats {
+				display: grid;
+				grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+				gap: 1rem;
+				margin-top: 1rem;
+			}
+
+			.stat-card {
+				background: #f8f9fa;
+				padding: 1rem;
+				border-radius: 4px;
+				text-align: center;
+			}
+
+			.stat-value {
+				font-size: 2rem;
+				font-weight: 700;
+				color: #007bff;
+			}
+
+			.stat-label {
+				color: #666;
+				font-size: 0.875rem;
+				margin-top: 0.25rem;
+			}
+
+			.error {
+				background: #f8d7da;
+				color: #721c24;
+				padding: 1rem;
+				border-radius: 4px;
+				margin-top: 1rem;
+			}
+
+			.info {
+				background: #d1ecf1;
+				color: #0c5460;
+				padding: 1rem;
+				border-radius: 4px;
+				margin-bottom: 1rem;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<h1>🗜️ libuntar Demo</h1>
+			<p>
+				Extract and view files from .tar.gz archives in the browser using native
+				JavaScript APIs.
+			</p>
+
+			<div class="info">
+				<strong>Try it out:</strong> Upload a .tar.gz file or use the sample
+				file provided below.
+			</div>
+
+			<div class="upload-section">
+				<h2>Upload or Load Archive</h2>
+				<input
+					type="file"
+					id="fileInput"
+					accept=".tar.gz,.tgz"
+					aria-label="Upload tar.gz file"
+				/>
+				<div>
+					<button onclick="loadSampleFile()">Load Sample File</button>
+				</div>
+			</div>
+
+			<div id="stats" class="stats" style="display: none"></div>
+
+			<div id="fileList" class="file-list"></div>
+
+			<div id="contentViewer" style="display: none"></div>
+
+			<div id="error" class="error" style="display: none"></div>
+		</div>
+
+		<script type="module">
+			// Import the library functions
+			import { tarGetEntries, tarGetEntryData } from '../libuntar.js';
+
+			let currentArchive = null;
+
+			// Handle file input
+			document.getElementById('fileInput').addEventListener('change', (e) => {
+				const file = e.target.files[0];
+				if (file) {
+					processFile(file);
+				}
+			});
+
+			// Load sample file
+			window.loadSampleFile = async function () {
+				try {
+					const response = await fetch('./sample.tar.gz');
+					const blob = await response.blob();
+					await processFile(blob);
+				} catch (error) {
+					showError('Failed to load sample file: ' + error.message);
+				}
+			};
+
+			// Process the tar.gz file
+			async function processFile(blob) {
+				try {
+					hideError();
+					showInfo('Processing archive...');
+
+					// Decompress gzip
+					const decompressedStream = blob
+						.stream()
+						.pipeThrough(new DecompressionStream('gzip'));
+					const tar = await new Response(decompressedStream).arrayBuffer();
+
+					// Extract entries
+					const entries = tarGetEntries(tar);
+
+					// Filter out garbage files
+					const filteredEntries = entries.filter(
+						({ name }) => !(name.includes('._') || name.includes('PaxHeader')),
+					);
+
+					currentArchive = {
+						arrayBuffer: tar,
+						entries: filteredEntries,
+					};
+
+					displayStats(filteredEntries);
+					displayFileList(filteredEntries);
+					hideInfo();
+				} catch (error) {
+					showError('Error processing file: ' + error.message);
+				}
+			}
+
+			// Display statistics
+			function displayStats(entries) {
+				const files = entries.filter((e) => e.is_file);
+				const directories = entries.filter((e) => !e.is_file);
+				const totalSize = files.reduce((sum, f) => sum + f.size, 0);
+
+				const statsDiv = document.getElementById('stats');
+				statsDiv.style.display = 'grid';
+				statsDiv.innerHTML = `
+					<div class="stat-card">
+						<div class="stat-value">${entries.length}</div>
+						<div class="stat-label">Total Entries</div>
+					</div>
+					<div class="stat-card">
+						<div class="stat-value">${files.length}</div>
+						<div class="stat-label">Files</div>
+					</div>
+					<div class="stat-card">
+						<div class="stat-value">${directories.length}</div>
+						<div class="stat-label">Directories</div>
+					</div>
+					<div class="stat-card">
+						<div class="stat-value">${formatBytes(totalSize)}</div>
+						<div class="stat-label">Total Size</div>
+					</div>
+				`;
+			}
+
+			// Display file list
+			function displayFileList(entries) {
+				const listDiv = document.getElementById('fileList');
+
+				if (entries.length === 0) {
+					listDiv.innerHTML = '<p>No files found in archive.</p>';
+					return;
+				}
+
+				const html = entries
+					.map(
+						(entry) => `
+					<div class="file-item">
+						<span class="file-name">${escapeHtml(entry.name)}</span>
+						<span class="file-meta">
+							${formatBytes(entry.size)}
+							<span class="file-type ${entry.is_file ? 'file' : 'dir'}">
+								${entry.is_file ? 'FILE' : 'DIR'}
+							</span>
+						</span>
+						${
+							entry.is_file && entry.size > 0
+								? `<button class="view-btn" onclick="viewFile('${escapeHtml(entry.name)}')">View</button>`
+								: ''
+						}
+					</div>
+				`,
+					)
+					.join('');
+
+				listDiv.innerHTML = `<h2>Files in Archive</h2>${html}`;
+			}
+
+			// View file content
+			window.viewFile = function (fileName) {
+				const entry = currentArchive.entries.find((e) => e.name === fileName);
+				if (!entry) return;
+
+				const data = tarGetEntryData(entry, currentArchive.arrayBuffer);
+				const content = new TextDecoder().decode(data);
+
+				const viewerDiv = document.getElementById('contentViewer');
+				viewerDiv.style.display = 'block';
+				viewerDiv.innerHTML = `
+					<div class="content-viewer">
+						<div class="content-header">📄 ${escapeHtml(fileName)}</div>
+						<div class="content-body">${escapeHtml(content)}</div>
+					</div>
+				`;
+
+				viewerDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+			};
+
+			// Utility functions
+			function formatBytes(bytes) {
+				if (bytes === 0) return '0 B';
+				const k = 1024;
+				const sizes = ['B', 'KB', 'MB', 'GB'];
+				const i = Math.floor(Math.log(bytes) / Math.log(k));
+				return (
+					Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i]
+				);
+			}
+
+			function escapeHtml(text) {
+				const div = document.createElement('div');
+				div.textContent = text;
+				return div.innerHTML;
+			}
+
+			function showError(message) {
+				const errorDiv = document.getElementById('error');
+				errorDiv.textContent = message;
+				errorDiv.style.display = 'block';
+			}
+
+			function hideError() {
+				document.getElementById('error').style.display = 'none';
+			}
+
+			function showInfo(message) {
+				const infoDiv = document.querySelector('.info');
+				infoDiv.innerHTML = `<strong>Processing:</strong> ${message}`;
+			}
+
+			function hideInfo() {
+				const infoDiv = document.querySelector('.info');
+				infoDiv.innerHTML =
+					'<strong>Try it out:</strong> Upload a .tar.gz file or use the sample file provided below.';
+			}
+		</script>
+	</body>
+</html>
