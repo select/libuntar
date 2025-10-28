@@ -32,9 +32,18 @@
 		"prepublishOnly": "pnpm run build"
 	},
 	"type": "module",
-	"keywords": [],
+	"keywords": [
+		"tar",
+		"gzip",
+		"archive",
+		"extract",
+		"untar",
+		"decompress",
+		"browser",
+		"typescript"
+	],
 	"author": "",
-	"license": "ISC",
+	"license": "MIT",
 	"packageManager": "pnpm@10.19.0",
 	"devDependencies": {
 		"@types/node": "^24.9.2",
