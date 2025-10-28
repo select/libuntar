@@ -1,6 +1,6 @@
-import { tarGetEntries } from './libuntar';
+import { getEntries } from './libuntar';
 
-export { tarGetEntries as getEntries } from './libuntar';
+export { getEntries, untar } from './libuntar';
 
 export async function untgz(blob: Blob) {
 	const tar = await new Response(
@@ -8,7 +8,7 @@ export async function untgz(blob: Blob) {
 	).arrayBuffer();
 	return {
 		arrayBuffer: tar,
-		nodes: tarGetEntries(tar).filter(
+		nodes: getEntries(tar).filter(
 			// Filter out garbage files from MacOS
 			({ name }) => !(name.includes('._') || name.includes('PaxHeader')),
 		),

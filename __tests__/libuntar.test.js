@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { tarGetEntries, tarGetEntryData } from '../libuntar';
+import { getEntries, untar } from '../libuntar';
 import { readFileSync } from 'fs';
 
 describe('libuntar with real tar.gz file', () => {
@@ -15,9 +15,9 @@ describe('libuntar with real tar.gz file', () => {
 		tarBuffer = await new Response(decompressedStream).arrayBuffer();
 	});
 
-	describe('tarGetEntries', () => {
+	describe('getEntries', () => {
 		it('should extract all entries from real tar file', () => {
-			const entries = tarGetEntries(tarBuffer);
+			const entries = getEntries(tarBuffer);
 
 			// Should have directory + 5 files (including image) + nested directory
 			expect(entries.length).toBeGreaterThanOrEqual(5);
@@ -32,7 +32,7 @@ describe('libuntar with real tar.gz file', () => {
 		});
 
 		it('should correctly identify files vs directories', () => {
-			const entries = tarGetEntries(tarBuffer);
+			const entries = getEntries(tarBuffer);
 
 			const directories = entries.filter((e) => !e.isFile);
 			const files = entries.filter((e) => e.isFile);
@@ -47,7 +47,7 @@ describe('libuntar with real tar.gz file', () => {
 		});
 
 		it('should have correct sizes for files', () => {
-			const entries = tarGetEntries(tarBuffer);
+			const entries = getEntries(tarBuffer);
 
 			const file1 = entries.find((e) => e.name === 'sample-data/file1.txt');
 			const file2 = entries.find((e) => e.name === 'sample-data/file2.txt');
@@ -64,7 +64,7 @@ describe('libuntar with real tar.gz file', () => {
 		});
 
 		it('should include offset information for each entry', () => {
-			const entries = tarGetEntries(tarBuffer);
+			const entries = getEntries(tarBuffer);
 
 			entries.forEach((entry) => {
 				expect(entry.offset).toBeDefined();
@@ -74,14 +74,14 @@ describe('libuntar with real tar.gz file', () => {
 		});
 	});
 
-	describe('tarGetEntryData', () => {
+	describe('untar', () => {
 		it('should extract file1.txt content correctly', () => {
-			const entries = tarGetEntries(tarBuffer);
+			const entries = getEntries(tarBuffer);
 			const file1 = entries.find((e) => e.name === 'sample-data/file1.txt');
 
 			expect(file1).toBeDefined();
 
-			const data = tarGetEntryData(file1, tarBuffer);
+			const data = untar(file1, tarBuffer);
 			const content = new TextDecoder().decode(data);
 
 			expect(content).toContain('Hello World!');
@@ -90,12 +90,12 @@ describe('libuntar with real tar.gz file', () => {
 		});
 
 		it('should extract file2.txt content correctly', () => {
-			const entries = tarGetEntries(tarBuffer);
+			const entries = getEntries(tarBuffer);
 			const file2 = entries.find((e) => e.name === 'sample-data/file2.txt');
 
 			expect(file2).toBeDefined();
 
-			const data = tarGetEntryData(file2, tarBuffer);
+			const data = untar(file2, tarBuffer);
 			const content = new TextDecoder().decode(data);
 
 			expect(content).toContain('Second file content here.');
@@ -103,14 +103,14 @@ describe('libuntar with real tar.gz file', () => {
 		});
 
 		it('should extract nested file content correctly', () => {
-			const entries = tarGetEntries(tarBuffer);
+			const entries = getEntries(tarBuffer);
 			const deepFile = entries.find(
 				(e) => e.name === 'sample-data/nested/deep.txt',
 			);
 
 			expect(deepFile).toBeDefined();
 
-			const data = tarGetEntryData(deepFile, tarBuffer);
+			const data = untar(deepFile, tarBuffer);
 			const content = new TextDecoder().decode(data);
 
 			expect(content).toContain('This file is in a nested directory.');
@@ -118,12 +118,12 @@ describe('libuntar with real tar.gz file', () => {
 		});
 
 		it('should extract README.md content correctly', () => {
-			const entries = tarGetEntries(tarBuffer);
+			const entries = getEntries(tarBuffer);
 			const readme = entries.find((e) => e.name === 'sample-data/README.md');
 
 			expect(readme).toBeDefined();
 
-			const data = tarGetEntryData(readme, tarBuffer);
+			const data = untar(readme, tarBuffer);
 			const content = new TextDecoder().decode(data);
 
 			expect(content).toContain('# Test Data');
@@ -132,11 +132,11 @@ describe('libuntar with real tar.gz file', () => {
 		});
 
 		it('should extract all files without corruption', () => {
-			const entries = tarGetEntries(tarBuffer);
+			const entries = getEntries(tarBuffer);
 			const files = entries.filter((e) => e.isFile);
 
 			files.forEach((file) => {
-				const data = tarGetEntryData(file, tarBuffer);
+				const data = untar(file, tarBuffer);
 				const content = new TextDecoder().decode(data);
 
 				// Content should not be empty for non-zero sized files
@@ -150,18 +150,18 @@ describe('libuntar with real tar.gz file', () => {
 		});
 
 		it('should handle directory entries (zero size)', () => {
-			const entries = tarGetEntries(tarBuffer);
+			const entries = getEntries(tarBuffer);
 			const directories = entries.filter((e) => !e.isFile);
 
 			directories.forEach((dir) => {
 				expect(dir.size).toBe(0);
-				const data = tarGetEntryData(dir, tarBuffer);
+				const data = untar(dir, tarBuffer);
 				expect(data.length).toBe(0);
 			});
 		});
 
 		it('should extract binary image file correctly', () => {
-			const entries = tarGetEntries(tarBuffer);
+			const entries = getEntries(tarBuffer);
 			const imageFile = entries.find(
 				(e) => e.name === 'sample-data/xkcd-1168-tar.png',
 			);
@@ -171,7 +171,7 @@ describe('libuntar with real tar.gz file', () => {
 			expect(imageFile.size).toBeGreaterThan(0);
 
 			// Extract the image data
-			const data = tarGetEntryData(imageFile, tarBuffer);
+			const data = untar(imageFile, tarBuffer);
 
 			// Verify it's a PNG file by checking the PNG magic bytes
 			// PNG files start with: 0x89 0x50 0x4E 0x47 0x0D 0x0A 0x1A 0x0A
@@ -187,14 +187,14 @@ describe('libuntar with real tar.gz file', () => {
 
 	describe('integration tests', () => {
 		it('should be able to extract and reconstruct all files', () => {
-			const entries = tarGetEntries(tarBuffer);
+			const entries = getEntries(tarBuffer);
 			const extractedFiles = {};
 
 			// Extract all files
 			entries
 				.filter((e) => e.isFile)
 				.forEach((entry) => {
-					const data = tarGetEntryData(entry, tarBuffer);
+					const data = untar(entry, tarBuffer);
 					extractedFiles[entry.name] = data;
 				});
 
@@ -218,13 +218,13 @@ describe('libuntar with real tar.gz file', () => {
 		});
 
 		it('should maintain data integrity across multiple extractions', () => {
-			const entries = tarGetEntries(tarBuffer);
+			const entries = getEntries(tarBuffer);
 			const file1 = entries.find((e) => e.name === 'sample-data/file1.txt');
 
 			// Extract the same file multiple times
-			const data1 = tarGetEntryData(file1, tarBuffer);
-			const data2 = tarGetEntryData(file1, tarBuffer);
-			const data3 = tarGetEntryData(file1, tarBuffer);
+			const data1 = untar(file1, tarBuffer);
+			const data2 = untar(file1, tarBuffer);
+			const data3 = untar(file1, tarBuffer);
 
 			const content1 = new TextDecoder().decode(data1);
 			const content2 = new TextDecoder().decode(data2);

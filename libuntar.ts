@@ -26,7 +26,7 @@ function _tarRead(view: Uint8Array, offset: number, size: number): Uint8Array {
 	return view.slice(offset, offset + size);
 }
 
-export function tarGetEntries(arrayBuffer: ArrayBuffer): TarEntry[] {
+export function getEntries(arrayBuffer: ArrayBuffer): TarEntry[] {
 	const view = new Uint8Array(arrayBuffer);
 	let offset = 0;
 	const entries: TarEntry[] = [];
@@ -72,10 +72,7 @@ export function tarGetEntries(arrayBuffer: ArrayBuffer): TarEntry[] {
 	return entries;
 }
 
-export function tarGetEntryData(
-	entry: TarEntry,
-	arrayBuffer: ArrayBuffer,
-): Uint8Array {
+export function untar(entry: TarEntry, arrayBuffer: ArrayBuffer): Uint8Array {
 	return _tarRead(
 		new Uint8Array(arrayBuffer),
 		entry.offset + TAR_HEADER_SIZE,

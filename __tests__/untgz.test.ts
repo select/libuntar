@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { untgz } from '../untgz';
-import { tarGetEntryData } from '../libuntar';
+import { untar } from '../libuntar';
 import { readFileSync } from 'fs';
 
 describe('untgz', () => {
@@ -61,7 +61,7 @@ describe('untgz', () => {
 		expect(file1).toBeDefined();
 
 		// Extract the file data using the arrayBuffer
-		const data = tarGetEntryData(file1!, result.arrayBuffer);
+		const data = untar(file1!, result.arrayBuffer);
 		const content = new TextDecoder().decode(data);
 
 		expect(content).toContain('Hello World!');
@@ -78,7 +78,7 @@ describe('untgz', () => {
 		const files = result.nodes.filter((n) => n.isFile);
 
 		files.forEach((file) => {
-			const data = tarGetEntryData(file, result.arrayBuffer);
+			const data = untar(file, result.arrayBuffer);
 			expect(data).toBeDefined();
 
 			if (file.size > 0) {
@@ -138,7 +138,7 @@ describe('untgz', () => {
 		expect(imageFile!.isFile).toBe(true);
 
 		// Extract the image data
-		const data = tarGetEntryData(imageFile!, result.arrayBuffer);
+		const data = untar(imageFile!, result.arrayBuffer);
 
 		// Verify PNG magic bytes
 		expect(data[0]).toBe(0x89);
