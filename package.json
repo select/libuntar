@@ -5,7 +5,11 @@
 	"main": "index.js",
 	"scripts": {
 		"test": "vitest run",
-		"test:watch": "vitest"
+		"test:watch": "vitest",
+		"lint": "oxlint .",
+		"lint:fix": "oxlint --fix .",
+		"format": "prettier --write .",
+		"format:check": "prettier --check ."
 	},
 	"type": "module",
 	"keywords": [],
@@ -13,6 +17,8 @@
 	"license": "ISC",
 	"packageManager": "pnpm@10.19.0",
 	"devDependencies": {
+		"oxlint": "^1.24.0",
+		"prettier": "^3.6.2",
 		"vitest": "^4.0.4"
 	}
 }
