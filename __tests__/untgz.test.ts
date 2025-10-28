@@ -47,6 +47,7 @@ describe('untgz', () => {
 		expect(fileNames).toContain('sample-data/file2.txt');
 		expect(fileNames).toContain('sample-data/README.md');
 		expect(fileNames).toContain('sample-data/nested/deep.txt');
+		expect(fileNames).toContain('sample-data/xkcd-1168-tar.png');
 	});
 
 	it('should provide valid arrayBuffer for extracting file data', async () => {
@@ -121,5 +122,32 @@ describe('untgz', () => {
 			expect(typeof node.is_file).toBe('boolean');
 			expect(typeof node.offset).toBe('number');
 		});
+	});
+
+	it('should extract binary image files correctly', async () => {
+		const fileBuffer = readFileSync('./test-fixtures/sample.tar.gz');
+		const blob = new Blob([fileBuffer]);
+
+		const result = await untgz(blob);
+
+		// Find the image file
+		const imageFile = result.nodes.find(
+			(n) => n.name === 'sample-data/xkcd-1168-tar.png',
+		);
+		expect(imageFile).toBeDefined();
+		expect(imageFile!.is_file).toBe(true);
+
+		// Extract the image data
+		const data = tarGetEntryData(imageFile!, result.arrayBuffer);
+
+		// Verify PNG magic bytes
+		expect(data[0]).toBe(0x89);
+		expect(data[1]).toBe(0x50); // 'P'
+		expect(data[2]).toBe(0x4e); // 'N'
+		expect(data[3]).toBe(0x47); // 'G'
+
+		// Verify size matches
+		expect(data.length).toBe(imageFile!.size);
+		expect(data.length).toBeGreaterThan(10000); // Reasonable image size
 	});
 });
