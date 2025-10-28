@@ -9,12 +9,9 @@ Extract files from tar.gz archives in the browser using native APIs. Zero depend
 ## Features
 
 - 🌐 **Browser-native**: Uses native `DecompressionStream` API for gzip decompression
-- 📦 **Lightweight**: ~1KB minified + gzipped
+- 📦 **Lightweight**: ~1KB minified
 - 🚀 **Zero dependencies**: No external libraries required
 - 💪 **TypeScript**: Full type definitions included
-- 🎯 **Dual format**: ESM and CommonJS builds
-- 🧹 **Auto-filtering**: Automatically filters out MacOS metadata files
-- 🔧 **Binary safe**: Handles both text and binary files correctly
 
 ## Installation
 
@@ -64,20 +61,25 @@ if (textFile) {
 ```typescript
 import { tarGetEntries, tarGetEntryData } from 'libuntar';
 
-// If you already have a decompressed tar ArrayBuffer
-const tarBuffer = /* your tar ArrayBuffer */;
+// Fetch a raw tar file (not gzipped)
+const response = await fetch('archive.tar');
+const arrayBuffer = await response.arrayBuffer();
 
-const entries = tarGetEntries(tarBuffer);
+// Extract entries from the tar
+const entries = tarGetEntries(arrayBuffer);
 
-entries.forEach(entry => {
-  const data = tarGetEntryData(entry, tarBuffer);
-
-  if (entry.isFile) {
-    // Handle file data
-    const content = new TextDecoder().decode(data);
-    console.log(content);
-  }
+// List all files
+entries.forEach((entry) => {
+	console.log(`${entry.name} (${entry.size} bytes)`);
 });
+
+// Extract a specific file
+const textFile = entries.find((e) => e.name === 'readme.txt');
+if (textFile) {
+	const data = tarGetEntryData(textFile, arrayBuffer);
+	const text = new TextDecoder().decode(data);
+	console.log(text);
+}
 ```
 
 ## API Reference
@@ -166,107 +168,6 @@ interface TarEntry {
 }
 ```
 
-## Usage Examples
-
-### Extract an Image from tar.gz
-
-```typescript
-import { untgz } from 'libuntar/untgz';
-import { tarGetEntryData } from 'libuntar';
-
-const response = await fetch('images.tar.gz');
-const blob = await response.blob();
-const { arrayBuffer, nodes } = await untgz(blob);
-
-// Find the image
-const imageEntry = nodes.find((e) => e.name.endsWith('.png'));
-if (imageEntry) {
-	const data = tarGetEntryData(imageEntry, arrayBuffer);
-	const imageBlob = new Blob([data], { type: 'image/png' });
-	const url = URL.createObjectURL(imageBlob);
-
-	// Use the image
-	document.getElementById('img').src = url;
-}
-```
-
-### Extract All Text Files
-
-```typescript
-import { untgz } from 'libuntar/untgz';
-import { tarGetEntryData } from 'libuntar';
-
-const { arrayBuffer, nodes } = await untgz(tarGzBlob);
-
-const textFiles = nodes
-	.filter((e) => e.isFile && e.name.endsWith('.txt'))
-	.map((entry) => {
-		const data = tarGetEntryData(entry, arrayBuffer);
-		const content = new TextDecoder().decode(data);
-		return { name: entry.name, content };
-	});
-
-console.log(`Extracted ${textFiles.length} text files`);
-```
-
-### File Upload Handler
-
-```typescript
-import { untgz } from 'libuntar/untgz';
-import { tarGetEntryData } from 'libuntar';
-
-document.getElementById('fileInput').addEventListener('change', async (e) => {
-	const file = e.target.files[0];
-
-	if (!file.name.endsWith('.tar.gz')) {
-		alert('Please select a .tar.gz file');
-		return;
-	}
-
-	try {
-		const { arrayBuffer, nodes } = await untgz(file);
-
-		console.log('Archive contents:');
-		nodes.forEach((entry) => {
-			console.log(`- ${entry.name} (${entry.size} bytes)`);
-		});
-	} catch (error) {
-		console.error('Failed to extract archive:', error);
-	}
-});
-```
-
-### Working with Directory Structure
-
-```typescript
-import { untgz } from 'libuntar/untgz';
-
-const { nodes } = await untgz(blob);
-
-// Separate files and directories
-const files = nodes.filter((e) => e.isFile);
-const directories = nodes.filter((e) => !e.isFile);
-
-console.log(`Files: ${files.length}`);
-console.log(`Directories: ${directories.length}`);
-
-// Build a file tree
-const tree = {};
-files.forEach((file) => {
-	const parts = file.name.split('/');
-	let current = tree;
-
-	parts.forEach((part, i) => {
-		if (i === parts.length - 1) {
-			current[part] = file;
-		} else {
-			current[part] = current[part] || {};
-			current = current[part];
-		}
-	});
-});
-```
-
 ## Browser Compatibility
 
 This library uses the native `DecompressionStream` API which is supported in:
@@ -276,42 +177,6 @@ This library uses the native `DecompressionStream` API which is supported in:
 - Safari 16.4+
 
 For older browsers, you may need a polyfill or use a different decompression library.
-
-## Module Exports
-
-The package provides two entry points:
-
-### Main export (`libuntar`)
-
-```typescript
-import { tarGetEntries, tarGetEntryData, TarEntry } from 'libuntar';
-```
-
-### untgz module (`libuntar/untgz`)
-
-```typescript
-import { untgz, getEntries } from 'libuntar/untgz';
-```
-
-## TypeScript Support
-
-Full TypeScript definitions are included. The library is written in TypeScript and provides complete type safety.
-
-```typescript
-import type { TarEntry } from 'libuntar';
-
-function processEntry(entry: TarEntry, buffer: ArrayBuffer): void {
-	// TypeScript knows the shape of TarEntry
-	console.log(entry.name, entry.size, entry.isFile);
-}
-```
-
-## Performance
-
-- **Small bundle size**: ~1KB minified + gzipped
-- **Fast extraction**: Uses native browser APIs
-- **Memory efficient**: Streams data when possible
-- **No blocking**: Async operations don't freeze the UI
 
 ## Development
 
@@ -330,15 +195,6 @@ pnpm lint
 
 # Format code
 pnpm format
-```
-
-## Demo
-
-A live demo is included in the `demo/` folder. To run it:
-
-```bash
-python -m http.server 8000
-# Visit http://localhost:8000/demo/
 ```
 
 ## Credits
