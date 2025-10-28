@@ -237,7 +237,8 @@
 
 		<script type="module">
 			// Import the library functions from the built dist
-			import { tarGetEntries, tarGetEntryData } from '../dist/libuntar.js';
+			import { untgz } from '../dist/untgz.js';
+			import { tarGetEntryData } from '../dist/libuntar.js';
 
 			let currentArchive = null;
 
@@ -266,27 +267,16 @@
 					hideError();
 					showInfo('Processing archive...');
 
-					// Decompress gzip
-					const decompressedStream = blob
-						.stream()
-						.pipeThrough(new DecompressionStream('gzip'));
-					const tar = await new Response(decompressedStream).arrayBuffer();
-
-					// Extract entries
-					const entries = tarGetEntries(tar);
-
-					// Filter out garbage files
-					const filteredEntries = entries.filter(
-						({ name }) => !(name.includes('._') || name.includes('PaxHeader')),
-					);
+					// Use untgz to decompress and extract entries in one step
+					const result = await untgz(blob);
 
 					currentArchive = {
-						arrayBuffer: tar,
-						entries: filteredEntries,
+						arrayBuffer: result.arrayBuffer,
+						entries: result.nodes,
 					};
 
-					displayStats(filteredEntries);
-					displayFileList(filteredEntries);
+					displayStats(result.nodes);
+					displayFileList(result.nodes);
 					hideInfo();
 				} catch (error) {
 					showError('Error processing file: ' + error.message);
@@ -295,8 +285,8 @@
 
 			// Display statistics
 			function displayStats(entries) {
-				const files = entries.filter((e) => e.is_file);
-				const directories = entries.filter((e) => !e.is_file);
+				const files = entries.filter((e) => e.isFile);
+				const directories = entries.filter((e) => !e.isFile);
 				const totalSize = files.reduce((sum, f) => sum + f.size, 0);
 
 				const statsDiv = document.getElementById('stats');
@@ -337,12 +327,12 @@
 						<span class="file-name">${escapeHtml(entry.name)}</span>
 						<span class="file-meta">
 							${formatBytes(entry.size)}
-							<span class="file-type ${entry.is_file ? 'file' : 'dir'}">
-								${entry.is_file ? 'FILE' : 'DIR'}
+							<span class="file-type ${entry.isFile ? 'file' : 'dir'}">
+								${entry.isFile ? 'FILE' : 'DIR'}
 							</span>
 						</span>
 						${
-							entry.is_file && entry.size > 0
+							entry.isFile && entry.size > 0
 								? `<button class="view-btn" onclick="viewFile('${escapeHtml(entry.name)}')">View</button>`
 								: ''
 						}
