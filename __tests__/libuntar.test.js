@@ -34,8 +34,8 @@ describe('libuntar with real tar.gz file', () => {
 		it('should correctly identify files vs directories', () => {
 			const entries = tarGetEntries(tarBuffer);
 
-			const directories = entries.filter((e) => !e.is_file);
-			const files = entries.filter((e) => e.is_file);
+			const directories = entries.filter((e) => !e.isFile);
+			const files = entries.filter((e) => e.isFile);
 
 			expect(directories.length).toBeGreaterThanOrEqual(2); // sample-data/ and nested/
 			expect(files.length).toBeGreaterThanOrEqual(5); // 4 text files + 1 image
@@ -133,7 +133,7 @@ describe('libuntar with real tar.gz file', () => {
 
 		it('should extract all files without corruption', () => {
 			const entries = tarGetEntries(tarBuffer);
-			const files = entries.filter((e) => e.is_file);
+			const files = entries.filter((e) => e.isFile);
 
 			files.forEach((file) => {
 				const data = tarGetEntryData(file, tarBuffer);
@@ -151,7 +151,7 @@ describe('libuntar with real tar.gz file', () => {
 
 		it('should handle directory entries (zero size)', () => {
 			const entries = tarGetEntries(tarBuffer);
-			const directories = entries.filter((e) => !e.is_file);
+			const directories = entries.filter((e) => !e.isFile);
 
 			directories.forEach((dir) => {
 				expect(dir.size).toBe(0);
@@ -167,7 +167,7 @@ describe('libuntar with real tar.gz file', () => {
 			);
 
 			expect(imageFile).toBeDefined();
-			expect(imageFile.is_file).toBe(true);
+			expect(imageFile.isFile).toBe(true);
 			expect(imageFile.size).toBeGreaterThan(0);
 
 			// Extract the image data
@@ -192,7 +192,7 @@ describe('libuntar with real tar.gz file', () => {
 
 			// Extract all files
 			entries
-				.filter((e) => e.is_file)
+				.filter((e) => e.isFile)
 				.forEach((entry) => {
 					const data = tarGetEntryData(entry, tarBuffer);
 					extractedFiles[entry.name] = data;
