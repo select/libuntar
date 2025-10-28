@@ -1,0 +1,2 @@
+Second file content here.
+Testing tar extraction with real files.

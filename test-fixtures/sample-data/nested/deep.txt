@@ -1,0 +1,2 @@
+This file is in a nested directory.
+Testing directory structure preservation.

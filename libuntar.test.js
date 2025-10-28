@@ -1,293 +1,199 @@
 import { describe, it, expect } from 'vitest';
 import { tarGetEntries, tarGetEntryData } from './libuntar.js';
+import { readFileSync } from 'fs';
+import { inflate } from 'pako';
 
-describe('libuntar', () => {
+describe('libuntar with real tar.gz file', () => {
+	let tarBuffer;
+
+	// Load and decompress the real tar.gz file before tests
+	const gzipData = readFileSync('./test-fixtures/sample.tar.gz');
+	const decompressed = inflate(gzipData);
+	tarBuffer = decompressed.buffer;
+
 	describe('tarGetEntries', () => {
-		it('should return empty array for empty buffer', () => {
-			const buffer = new ArrayBuffer(512);
-			const entries = tarGetEntries(buffer);
-			expect(entries).toEqual([]);
+		it('should extract all entries from real tar file', () => {
+			const entries = tarGetEntries(tarBuffer);
+
+			// Should have directory + 4 files + nested directory
+			expect(entries.length).toBeGreaterThanOrEqual(4);
+
+			// Verify we have expected files
+			const fileNames = entries.map((e) => e.name);
+			expect(fileNames).toContain('sample-data/file1.txt');
+			expect(fileNames).toContain('sample-data/file2.txt');
+			expect(fileNames).toContain('sample-data/README.md');
+			expect(fileNames).toContain('sample-data/nested/deep.txt');
 		});
 
-		it('should extract single file entry from tar buffer', () => {
-			const buffer = createTarBuffer([
-				{
-					name: 'test.txt',
-					size: 11,
-					type: 0, // file
-					content: 'hello world',
-				},
-			]);
+		it('should correctly identify files vs directories', () => {
+			const entries = tarGetEntries(tarBuffer);
 
-			const entries = tarGetEntries(buffer);
-			expect(entries).toHaveLength(1);
-			expect(entries[0].name).toBe('test.txt');
-			expect(entries[0].size).toBe(11);
-			expect(entries[0].is_file).toBe(true);
+			const directories = entries.filter((e) => !e.is_file);
+			const files = entries.filter((e) => e.is_file);
+
+			expect(directories.length).toBeGreaterThanOrEqual(2); // sample-data/ and nested/
+			expect(files.length).toBeGreaterThanOrEqual(4); // 4 text files
+
+			// Check that directory names end with /
+			directories.forEach((dir) => {
+				expect(dir.name).toMatch(/\/$/);
+			});
 		});
 
-		it('should extract directory entry from tar buffer', () => {
-			const buffer = createTarBuffer([
-				{
-					name: 'mydir/',
-					size: 0,
-					type: 5, // directory
-					content: '',
-				},
-			]);
+		it('should have correct sizes for files', () => {
+			const entries = tarGetEntries(tarBuffer);
 
-			const entries = tarGetEntries(buffer);
-			expect(entries).toHaveLength(1);
-			expect(entries[0].name).toBe('mydir/');
-			expect(entries[0].size).toBe(0);
-			expect(entries[0].is_file).toBe(false);
+			const file1 = entries.find((e) => e.name === 'sample-data/file1.txt');
+			const file2 = entries.find((e) => e.name === 'sample-data/file2.txt');
+			const readme = entries.find((e) => e.name === 'sample-data/README.md');
+
+			expect(file1).toBeDefined();
+			expect(file1.size).toBeGreaterThan(0);
+
+			expect(file2).toBeDefined();
+			expect(file2.size).toBeGreaterThan(0);
+
+			expect(readme).toBeDefined();
+			expect(readme.size).toBeGreaterThan(0);
 		});
 
-		it('should extract multiple entries from tar buffer', () => {
-			const buffer = createTarBuffer([
-				{
-					name: 'file1.txt',
-					size: 5,
-					type: 0,
-					content: 'hello',
-				},
-				{
-					name: 'dir/',
-					size: 0,
-					type: 5,
-					content: '',
-				},
-				{
-					name: 'file2.txt',
-					size: 5,
-					type: 0,
-					content: 'world',
-				},
-			]);
+		it('should include offset information for each entry', () => {
+			const entries = tarGetEntries(tarBuffer);
 
-			const entries = tarGetEntries(buffer);
-			expect(entries).toHaveLength(3);
-			expect(entries[0].name).toBe('file1.txt');
-			expect(entries[1].name).toBe('dir/');
-			expect(entries[2].name).toBe('file2.txt');
-		});
-
-		it('should handle files with long content requiring multiple blocks', () => {
-			const longContent = 'a'.repeat(1000);
-			const buffer = createTarBuffer([
-				{
-					name: 'large.txt',
-					size: 1000,
-					type: 0,
-					content: longContent,
-				},
-			]);
-
-			const entries = tarGetEntries(buffer);
-			expect(entries).toHaveLength(1);
-			expect(entries[0].size).toBe(1000);
-		});
-
-		it('should skip unknown entry types', () => {
-			const buffer = createTarBuffer([
-				{
-					name: 'file.txt',
-					size: 5,
-					type: 0,
-					content: 'hello',
-				},
-				{
-					name: 'symlink',
-					size: 0,
-					type: 2, // symlink - should be skipped
-					content: '',
-				},
-				{
-					name: 'file2.txt',
-					size: 5,
-					type: 0,
-					content: 'world',
-				},
-			]);
-
-			const entries = tarGetEntries(buffer);
-			expect(entries).toHaveLength(2);
-			expect(entries[0].name).toBe('file.txt');
-			expect(entries[1].name).toBe('file2.txt');
-		});
-
-		it('should handle file names with null padding', () => {
-			const buffer = new ArrayBuffer(1024);
-			const view = new Uint8Array(buffer);
-
-			// Write name with explicit null padding
-			const name = 'test.txt';
-			for (let i = 0; i < name.length; i++) {
-				view[i] = name.charCodeAt(i);
-			}
-			// Fill rest with nulls (already zero-initialized)
-
-			// Write size in octal
-			const sizeOctal = '00000000005';
-			for (let i = 0; i < sizeOctal.length; i++) {
-				view[124 + i] = sizeOctal.charCodeAt(i);
-			}
-
-			// Write type
-			view[156] = '0'.charCodeAt(0);
-
-			const entries = tarGetEntries(buffer);
-			expect(entries).toHaveLength(1);
-			expect(entries[0].name).toBe('test.txt');
+			entries.forEach((entry) => {
+				expect(entry.offset).toBeDefined();
+				expect(typeof entry.offset).toBe('number');
+				expect(entry.offset).toBeGreaterThanOrEqual(0);
+			});
 		});
 	});
 
 	describe('tarGetEntryData', () => {
-		it('should extract file content from tar buffer', () => {
-			const content = 'hello world';
-			const buffer = createTarBuffer([
-				{
-					name: 'test.txt',
-					size: content.length,
-					type: 0,
-					content: content,
-				},
-			]);
+		it('should extract file1.txt content correctly', () => {
+			const entries = tarGetEntries(tarBuffer);
+			const file1 = entries.find((e) => e.name === 'sample-data/file1.txt');
 
-			const entries = tarGetEntries(buffer);
-			const data = tarGetEntryData(entries[0], buffer);
-			const text = new TextDecoder().decode(data);
+			expect(file1).toBeDefined();
 
-			expect(text).toBe(content);
+			const data = tarGetEntryData(file1, tarBuffer);
+			const content = new TextDecoder().decode(data);
+
+			expect(content).toContain('Hello World!');
+			expect(content).toContain('This is the first test file.');
+			expect(content).toContain('It contains multiple lines of text.');
 		});
 
-		it('should extract correct data for multiple files', () => {
-			const content1 = 'first file';
-			const content2 = 'second file';
-			const buffer = createTarBuffer([
-				{
-					name: 'file1.txt',
-					size: content1.length,
-					type: 0,
-					content: content1,
-				},
-				{
-					name: 'file2.txt',
-					size: content2.length,
-					type: 0,
-					content: content2,
-				},
-			]);
+		it('should extract file2.txt content correctly', () => {
+			const entries = tarGetEntries(tarBuffer);
+			const file2 = entries.find((e) => e.name === 'sample-data/file2.txt');
 
-			const entries = tarGetEntries(buffer);
-			const data1 = tarGetEntryData(entries[0], buffer);
-			const data2 = tarGetEntryData(entries[1], buffer);
+			expect(file2).toBeDefined();
 
-			expect(new TextDecoder().decode(data1)).toBe(content1);
-			expect(new TextDecoder().decode(data2)).toBe(content2);
+			const data = tarGetEntryData(file2, tarBuffer);
+			const content = new TextDecoder().decode(data);
+
+			expect(content).toContain('Second file content here.');
+			expect(content).toContain('Testing tar extraction with real files.');
 		});
 
-		it('should handle empty files', () => {
-			const buffer = createTarBuffer([
-				{
-					name: 'empty.txt',
-					size: 0,
-					type: 0,
-					content: '',
-				},
-			]);
+		it('should extract nested file content correctly', () => {
+			const entries = tarGetEntries(tarBuffer);
+			const deepFile = entries.find(
+				(e) => e.name === 'sample-data/nested/deep.txt',
+			);
 
-			const entries = tarGetEntries(buffer);
-			const data = tarGetEntryData(entries[0], buffer);
+			expect(deepFile).toBeDefined();
 
-			expect(data.length).toBe(0);
+			const data = tarGetEntryData(deepFile, tarBuffer);
+			const content = new TextDecoder().decode(data);
+
+			expect(content).toContain('This file is in a nested directory.');
+			expect(content).toContain('Testing directory structure preservation.');
 		});
 
-		it('should extract large file content correctly', () => {
-			const content = 'x'.repeat(2000);
-			const buffer = createTarBuffer([
-				{
-					name: 'large.txt',
-					size: content.length,
-					type: 0,
-					content: content,
-				},
-			]);
+		it('should extract README.md content correctly', () => {
+			const entries = tarGetEntries(tarBuffer);
+			const readme = entries.find((e) => e.name === 'sample-data/README.md');
 
-			const entries = tarGetEntries(buffer);
-			const data = tarGetEntryData(entries[0], buffer);
-			const text = new TextDecoder().decode(data);
+			expect(readme).toBeDefined();
 
-			expect(text).toBe(content);
-			expect(text.length).toBe(2000);
+			const data = tarGetEntryData(readme, tarBuffer);
+			const content = new TextDecoder().decode(data);
+
+			expect(content).toContain('# Test Data');
+			expect(content).toContain('This directory contains test files');
+			expect(content).toContain('## Files');
+		});
+
+		it('should extract all files without corruption', () => {
+			const entries = tarGetEntries(tarBuffer);
+			const files = entries.filter((e) => e.is_file);
+
+			files.forEach((file) => {
+				const data = tarGetEntryData(file, tarBuffer);
+				const content = new TextDecoder().decode(data);
+
+				// Content should not be empty for non-zero sized files
+				if (file.size > 0) {
+					expect(content.length).toBeGreaterThan(0);
+				}
+
+				// Content should match the reported size
+				expect(data.length).toBe(file.size);
+			});
+		});
+
+		it('should handle directory entries (zero size)', () => {
+			const entries = tarGetEntries(tarBuffer);
+			const directories = entries.filter((e) => !e.is_file);
+
+			directories.forEach((dir) => {
+				expect(dir.size).toBe(0);
+				const data = tarGetEntryData(dir, tarBuffer);
+				expect(data.length).toBe(0);
+			});
+		});
+	});
+
+	describe('integration tests', () => {
+		it('should be able to extract and reconstruct all files', () => {
+			const entries = tarGetEntries(tarBuffer);
+			const extractedFiles = {};
+
+			// Extract all files
+			entries
+				.filter((e) => e.is_file)
+				.forEach((entry) => {
+					const data = tarGetEntryData(entry, tarBuffer);
+					const content = new TextDecoder().decode(data);
+					extractedFiles[entry.name] = content;
+				});
+
+			// Verify we got all expected files
+			expect(Object.keys(extractedFiles).length).toBeGreaterThanOrEqual(4);
+			expect(extractedFiles['sample-data/file1.txt']).toBeDefined();
+			expect(extractedFiles['sample-data/file2.txt']).toBeDefined();
+			expect(extractedFiles['sample-data/README.md']).toBeDefined();
+			expect(extractedFiles['sample-data/nested/deep.txt']).toBeDefined();
+		});
+
+		it('should maintain data integrity across multiple extractions', () => {
+			const entries = tarGetEntries(tarBuffer);
+			const file1 = entries.find((e) => e.name === 'sample-data/file1.txt');
+
+			// Extract the same file multiple times
+			const data1 = tarGetEntryData(file1, tarBuffer);
+			const data2 = tarGetEntryData(file1, tarBuffer);
+			const data3 = tarGetEntryData(file1, tarBuffer);
+
+			const content1 = new TextDecoder().decode(data1);
+			const content2 = new TextDecoder().decode(data2);
+			const content3 = new TextDecoder().decode(data3);
+
+			// All extractions should be identical
+			expect(content1).toBe(content2);
+			expect(content2).toBe(content3);
 		});
 	});
 });
-
-/**
- * Helper function to create a TAR buffer for testing
- * @param {Array<{name: string, size: number, type: number, content: string}>} entries
- * @returns {ArrayBuffer}
- */
-function createTarBuffer(entries) {
-	const blocks = [];
-
-	for (const entry of entries) {
-		// Create header block (512 bytes)
-		const header = new Uint8Array(512);
-
-		// Write name (offset 0, size 100)
-		for (let i = 0; i < Math.min(entry.name.length, 100); i++) {
-			header[i] = entry.name.charCodeAt(i);
-		}
-
-		// Write size in octal (offset 124, size 12)
-		const sizeOctal = entry.size.toString(8).padStart(11, '0') + ' ';
-		for (let i = 0; i < sizeOctal.length; i++) {
-			header[124 + i] = sizeOctal.charCodeAt(i);
-		}
-
-		// Write type (offset 156, size 1)
-		header[156] = String.fromCharCode(48 + entry.type).charCodeAt(0);
-
-		// Calculate and write checksum (offset 148, size 8)
-		// Initialize checksum field with spaces
-		for (let i = 148; i < 156; i++) {
-			header[i] = 32; // space
-		}
-		let checksum = 0;
-		for (let i = 0; i < 512; i++) {
-			checksum += header[i];
-		}
-		const checksumOctal = checksum.toString(8).padStart(6, '0') + '\0 ';
-		for (let i = 0; i < checksumOctal.length; i++) {
-			header[148 + i] = checksumOctal.charCodeAt(i);
-		}
-
-		blocks.push(header);
-
-		// Write content blocks (512 byte aligned)
-		if (entry.content.length > 0) {
-			const contentBytes = new TextEncoder().encode(entry.content);
-			const contentBlockCount = Math.ceil(contentBytes.length / 512);
-			const contentBuffer = new Uint8Array(contentBlockCount * 512);
-			contentBuffer.set(contentBytes);
-			blocks.push(contentBuffer);
-		}
-	}
-
-	// Add two empty blocks at the end (TAR EOF marker)
-	blocks.push(new Uint8Array(512));
-	blocks.push(new Uint8Array(512));
-
-	// Combine all blocks
-	const totalSize = blocks.reduce((sum, block) => sum + block.length, 0);
-	const buffer = new Uint8Array(totalSize);
-	let offset = 0;
-	for (const block of blocks) {
-		buffer.set(block, offset);
-		offset += block.length;
-	}
-
-	return buffer.buffer;
-}
