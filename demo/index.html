@@ -237,7 +237,9 @@
 
 		<script type="module">
 			// Import the library functions from the built dist
-			import { untgz } from '../dist/untgz.js';
+			// untgz: decompress and extract tar.gz in one step
+			// getEntries: extract entries from a raw tar ArrayBuffer
+			import { untgz, getEntries } from '../dist/untgz.js';
 			import { tarGetEntryData } from '../dist/libuntar.js';
 
 			let currentArchive = null;
