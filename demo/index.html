@@ -239,8 +239,7 @@
 			// Import the library functions from the built dist
 			// untgz: decompress and extract tar.gz in one step
 			// getEntries: extract entries from a raw tar ArrayBuffer
-			import { untgz, getEntries } from '../dist/untgz.js';
-			import { untar } from '../dist/libuntar.js';
+			import { untgz, untar } from '../dist/untgz.js';
 
 			let currentArchive = null;
 
@@ -274,11 +273,11 @@
 
 					currentArchive = {
 						arrayBuffer: result.arrayBuffer,
-						entries: result.nodes,
+						entries: result.entries,
 					};
 
-					displayStats(result.nodes);
-					displayFileList(result.nodes);
+					displayStats(result.entries);
+					displayFileList(result.entries);
 					hideInfo();
 				} catch (error) {
 					showError('Error processing file: ' + error.message);

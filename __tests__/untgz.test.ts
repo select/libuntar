@@ -12,14 +12,14 @@ describe('untgz', () => {
 		// Call untgz
 		const result = await untgz(blob);
 
-		// Should have arrayBuffer and nodes
+		// Should have arrayBuffer and entries
 		expect(result.arrayBuffer).toBeDefined();
 		expect(result.arrayBuffer instanceof ArrayBuffer).toBe(true);
-		expect(result.nodes).toBeDefined();
-		expect(Array.isArray(result.nodes)).toBe(true);
+		expect(result.entries).toBeDefined();
+		expect(Array.isArray(result.entries)).toBe(true);
 
 		// Should have multiple entries
-		expect(result.nodes.length).toBeGreaterThan(0);
+		expect(result.entries.length).toBeGreaterThan(0);
 	});
 
 	it('should filter out MacOS garbage files', async () => {
@@ -29,7 +29,7 @@ describe('untgz', () => {
 		const result = await untgz(blob);
 
 		// Check that no entries contain ._ or PaxHeader
-		result.nodes.forEach((node) => {
+		result.entries.forEach((node) => {
 			expect(node.name).not.toContain('._');
 			expect(node.name).not.toContain('PaxHeader');
 		});
@@ -42,7 +42,7 @@ describe('untgz', () => {
 		const result = await untgz(blob);
 
 		// Verify we have expected files
-		const fileNames = result.nodes.map((n) => n.name);
+		const fileNames = result.entries.map((n) => n.name);
 		expect(fileNames).toContain('sample-data/file1.txt');
 		expect(fileNames).toContain('sample-data/file2.txt');
 		expect(fileNames).toContain('sample-data/README.md');
@@ -57,7 +57,9 @@ describe('untgz', () => {
 		const result = await untgz(blob);
 
 		// Find a file entry
-		const file1 = result.nodes.find((n) => n.name === 'sample-data/file1.txt');
+		const file1 = result.entries.find(
+			(n) => n.name === 'sample-data/file1.txt',
+		);
 		expect(file1).toBeDefined();
 
 		// Extract the file data using the arrayBuffer
@@ -75,7 +77,7 @@ describe('untgz', () => {
 		const result = await untgz(blob);
 
 		// Extract and verify all text files
-		const files = result.nodes.filter((n) => n.isFile);
+		const files = result.entries.filter((n) => n.isFile);
 
 		files.forEach((file) => {
 			const data = untar(file, result.arrayBuffer);
@@ -87,14 +89,14 @@ describe('untgz', () => {
 		});
 	});
 
-	it('should include both files and directories in nodes', async () => {
+	it('should include both files and directories in entries', async () => {
 		const fileBuffer = readFileSync('./test-fixtures/sample.tar.gz');
 		const blob = new Blob([fileBuffer]);
 
 		const result = await untgz(blob);
 
-		const files = result.nodes.filter((n) => n.isFile);
-		const directories = result.nodes.filter((n) => !n.isFile);
+		const files = result.entries.filter((n) => n.isFile);
+		const directories = result.entries.filter((n) => !n.isFile);
 
 		expect(files.length).toBeGreaterThan(0);
 		expect(directories.length).toBeGreaterThan(0);
@@ -108,10 +110,10 @@ describe('untgz', () => {
 
 		// Check structure
 		expect(result).toHaveProperty('arrayBuffer');
-		expect(result).toHaveProperty('nodes');
+		expect(result).toHaveProperty('entries');
 
-		// Verify nodes have proper structure
-		result.nodes.forEach((node) => {
+		// Verify entries have proper structure
+		result.entries.forEach((node) => {
 			expect(node).toHaveProperty('name');
 			expect(node).toHaveProperty('size');
 			expect(node).toHaveProperty('isFile');
@@ -131,7 +133,7 @@ describe('untgz', () => {
 		const result = await untgz(blob);
 
 		// Find the image file
-		const imageFile = result.nodes.find(
+		const imageFile = result.entries.find(
 			(n) => n.name === 'sample-data/xkcd-1168-tar.png',
 		);
 		expect(imageFile).toBeDefined();

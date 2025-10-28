@@ -1,7 +1,7 @@
 {
 	"name": "libuntar",
 	"version": "1.0.0",
-	"description": "Extract files from tar.gz archives in the browser using native APIs",
+	"description": "Extract files from .tar and tar.gz archives in the browser (and node) using native APIs",
 	"main": "./dist/libuntar.cjs",
 	"module": "./dist/libuntar.js",
 	"types": "./dist/libuntar.d.ts",
@@ -17,9 +17,7 @@
 			"require": "./dist/untgz.cjs"
 		}
 	},
-	"files": [
-		"dist"
-	],
+	"files": ["dist"],
 	"scripts": {
 		"test": "vitest run",
 		"test:watch": "vitest",
