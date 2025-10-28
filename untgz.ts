@@ -8,7 +8,7 @@ export async function untgz(blob: Blob) {
 	).arrayBuffer();
 	return {
 		arrayBuffer: tar,
-		nodes: getEntries(tar).filter(
+		entries: getEntries(tar).filter(
 			// Filter out garbage files from MacOS
 			({ name }) => !(name.includes('._') || name.includes('PaxHeader')),
 		),
