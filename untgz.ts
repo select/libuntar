@@ -1,5 +1,7 @@
 import { tarGetEntries } from './libuntar';
 
+export { tarGetEntries as getEntries } from './libuntar';
+
 export async function untgz(blob: Blob) {
 	const tar = await new Response(
 		blob.stream().pipeThrough(new DecompressionStream('gzip')),
