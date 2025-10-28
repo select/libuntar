@@ -75,7 +75,7 @@ describe('untgz', () => {
 		const result = await untgz(blob);
 
 		// Extract and verify all text files
-		const files = result.nodes.filter((n) => n.is_file);
+		const files = result.nodes.filter((n) => n.isFile);
 
 		files.forEach((file) => {
 			const data = tarGetEntryData(file, result.arrayBuffer);
@@ -93,8 +93,8 @@ describe('untgz', () => {
 
 		const result = await untgz(blob);
 
-		const files = result.nodes.filter((n) => n.is_file);
-		const directories = result.nodes.filter((n) => !n.is_file);
+		const files = result.nodes.filter((n) => n.isFile);
+		const directories = result.nodes.filter((n) => !n.isFile);
 
 		expect(files.length).toBeGreaterThan(0);
 		expect(directories.length).toBeGreaterThan(0);
@@ -114,12 +114,12 @@ describe('untgz', () => {
 		result.nodes.forEach((node) => {
 			expect(node).toHaveProperty('name');
 			expect(node).toHaveProperty('size');
-			expect(node).toHaveProperty('is_file');
+			expect(node).toHaveProperty('isFile');
 			expect(node).toHaveProperty('offset');
 
 			expect(typeof node.name).toBe('string');
 			expect(typeof node.size).toBe('number');
-			expect(typeof node.is_file).toBe('boolean');
+			expect(typeof node.isFile).toBe('boolean');
 			expect(typeof node.offset).toBe('number');
 		});
 	});
@@ -135,7 +135,7 @@ describe('untgz', () => {
 			(n) => n.name === 'sample-data/xkcd-1168-tar.png',
 		);
 		expect(imageFile).toBeDefined();
-		expect(imageFile!.is_file).toBe(true);
+		expect(imageFile!.isFile).toBe(true);
 
 		// Extract the image data
 		const data = tarGetEntryData(imageFile!, result.arrayBuffer);

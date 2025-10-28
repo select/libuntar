@@ -13,10 +13,12 @@ const TAR_SIZE_SIZE = 12;
 const TAR_NAME_OFFSET = 0;
 const TAR_NAME_SIZE = 100;
 
+const ASCII_ZERO = 48;
+
 export interface TarEntry {
 	name: string;
 	size: number;
-	is_file: boolean;
+	isFile: boolean;
 	offset: number;
 }
 
@@ -50,24 +52,21 @@ export function tarGetEntries(arrayBuffer: ArrayBuffer): TarEntry[] {
 			offset + TAR_TYPE_OFFSET,
 			TAR_TYPE_SIZE,
 		);
-		const entryType = entryTypeBytes[0] - 48; // Convert ASCII '0' to number 0
+		const entryType = entryTypeBytes[0] - ASCII_ZERO;
 
 		// Save this as en entry if it is a file or directory
 		if ([TAR_TYPE_FILE, TAR_TYPE_DIR].includes(entryType)) {
 			entries.push({
 				name: entryName,
 				size: entrySize,
-				is_file: entryType === TAR_TYPE_FILE,
+				isFile: entryType === TAR_TYPE_FILE,
 				offset,
 			});
 		}
 
 		// Round the offset up to be divisible by TAR_HEADER_SIZE
 		offset += entrySize + TAR_HEADER_SIZE;
-		if (offset % TAR_HEADER_SIZE > 0) {
-			const even = (offset / TAR_HEADER_SIZE) | 0; // number of times it goes evenly into TAR_HEADER_SIZE
-			offset = (even + 1) * TAR_HEADER_SIZE;
-		}
+		offset = Math.ceil(offset / TAR_HEADER_SIZE) * TAR_HEADER_SIZE;
 	}
 
 	return entries;
