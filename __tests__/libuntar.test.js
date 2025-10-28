@@ -19,8 +19,8 @@ describe('libuntar with real tar.gz file', () => {
 		it('should extract all entries from real tar file', () => {
 			const entries = tarGetEntries(tarBuffer);
 
-			// Should have directory + 4 files + nested directory
-			expect(entries.length).toBeGreaterThanOrEqual(4);
+			// Should have directory + 5 files (including image) + nested directory
+			expect(entries.length).toBeGreaterThanOrEqual(5);
 
 			// Verify we have expected files
 			const fileNames = entries.map((e) => e.name);
@@ -28,6 +28,7 @@ describe('libuntar with real tar.gz file', () => {
 			expect(fileNames).toContain('sample-data/file2.txt');
 			expect(fileNames).toContain('sample-data/README.md');
 			expect(fileNames).toContain('sample-data/nested/deep.txt');
+			expect(fileNames).toContain('sample-data/xkcd-1168-tar.png');
 		});
 
 		it('should correctly identify files vs directories', () => {
@@ -37,7 +38,7 @@ describe('libuntar with real tar.gz file', () => {
 			const files = entries.filter((e) => e.is_file);
 
 			expect(directories.length).toBeGreaterThanOrEqual(2); // sample-data/ and nested/
-			expect(files.length).toBeGreaterThanOrEqual(4); // 4 text files
+			expect(files.length).toBeGreaterThanOrEqual(5); // 4 text files + 1 image
 
 			// Check that directory names end with /
 			directories.forEach((dir) => {
@@ -158,6 +159,30 @@ describe('libuntar with real tar.gz file', () => {
 				expect(data.length).toBe(0);
 			});
 		});
+
+		it('should extract binary image file correctly', () => {
+			const entries = tarGetEntries(tarBuffer);
+			const imageFile = entries.find(
+				(e) => e.name === 'sample-data/xkcd-1168-tar.png',
+			);
+
+			expect(imageFile).toBeDefined();
+			expect(imageFile.is_file).toBe(true);
+			expect(imageFile.size).toBeGreaterThan(0);
+
+			// Extract the image data
+			const data = tarGetEntryData(imageFile, tarBuffer);
+
+			// Verify it's a PNG file by checking the PNG magic bytes
+			// PNG files start with: 0x89 0x50 0x4E 0x47 0x0D 0x0A 0x1A 0x0A
+			expect(data[0]).toBe(0x89);
+			expect(data[1]).toBe(0x50); // 'P'
+			expect(data[2]).toBe(0x4e); // 'N'
+			expect(data[3]).toBe(0x47); // 'G'
+
+			// Verify the extracted size matches the reported size
+			expect(data.length).toBe(imageFile.size);
+		});
 	});
 
 	describe('integration tests', () => {
@@ -170,16 +195,26 @@ describe('libuntar with real tar.gz file', () => {
 				.filter((e) => e.is_file)
 				.forEach((entry) => {
 					const data = tarGetEntryData(entry, tarBuffer);
-					const content = new TextDecoder().decode(data);
-					extractedFiles[entry.name] = content;
+					extractedFiles[entry.name] = data;
 				});
 
-			// Verify we got all expected files
-			expect(Object.keys(extractedFiles).length).toBeGreaterThanOrEqual(4);
+			// Verify we got all expected files (including the image)
+			expect(Object.keys(extractedFiles).length).toBeGreaterThanOrEqual(5);
 			expect(extractedFiles['sample-data/file1.txt']).toBeDefined();
 			expect(extractedFiles['sample-data/file2.txt']).toBeDefined();
 			expect(extractedFiles['sample-data/README.md']).toBeDefined();
 			expect(extractedFiles['sample-data/nested/deep.txt']).toBeDefined();
+			expect(extractedFiles['sample-data/xkcd-1168-tar.png']).toBeDefined();
+
+			// Verify text files can be decoded
+			const textContent = new TextDecoder().decode(
+				extractedFiles['sample-data/file1.txt'],
+			);
+			expect(textContent).toContain('Hello World!');
+
+			// Verify binary file is extracted correctly
+			const imageData = extractedFiles['sample-data/xkcd-1168-tar.png'];
+			expect(imageData[0]).toBe(0x89); // PNG signature
 		});
 
 		it('should maintain data integrity across multiple extractions', () => {
