@@ -236,10 +236,10 @@
 		</div>
 
 		<script type="module">
-			// Import the library functions from the built dist
+			// Import the library functions from the local build
 			// untgz: decompress and extract tar.gz in one step
 			// getEntries: extract entries from a raw tar ArrayBuffer
-			import { untgz, untar } from '../dist/untgz.js';
+			import { untgz, untar } from './untgz.js';
 
 			let currentArchive = null;
 

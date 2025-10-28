@@ -25,7 +25,8 @@
 		"lint:fix": "oxlint --fix .",
 		"format": "prettier --write .",
 		"format:check": "prettier --check .",
-		"build": "vite build && tsc --emitDeclarationOnly --outDir dist",
+		"build": "vite build && tsc --emitDeclarationOnly --outDir dist && pnpm run copy-to-demo",
+		"copy-to-demo": "cp dist/libuntar.js dist/untgz.js demo/",
 		"typecheck": "tsc --noEmit",
 		"prepublishOnly": "pnpm run build"
 	},
