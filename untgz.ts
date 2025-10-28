@@ -1,4 +1,4 @@
-import { tarGetEntries } from './libuntar.js';
+import { tarGetEntries } from './libuntar';
 
 export async function untgz(blob: Blob) {
 	const tar = await new Response(

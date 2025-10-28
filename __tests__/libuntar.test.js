@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { tarGetEntries, tarGetEntryData } from '../libuntar.js';
+import { tarGetEntries, tarGetEntryData } from '../libuntar';
 import { readFileSync } from 'fs';
 
 describe('libuntar with real tar.gz file', () => {
