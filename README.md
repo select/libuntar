@@ -29,11 +29,10 @@ yarn add libuntar
 
 ## Quick Start
 
-### Extract tar.gz files (Recommended)
+### Extract tar.gz files
 
 ```typescript
 import { untgz, getEntries } from 'libuntar/untgz';
-import { tarGetEntryData } from 'libuntar';
 
 // Fetch and extract a tar.gz file
 const response = await fetch('archive.tar.gz');
@@ -50,7 +49,7 @@ nodes.forEach((entry) => {
 // Extract a specific file
 const textFile = nodes.find((e) => e.name === 'readme.txt');
 if (textFile) {
-	const data = tarGetEntryData(textFile, arrayBuffer);
+	const data = getEntries(textFile, arrayBuffer);
 	const text = new TextDecoder().decode(data);
 	console.log(text);
 }
@@ -59,14 +58,14 @@ if (textFile) {
 ### Working with raw tar files
 
 ```typescript
-import { tarGetEntries, tarGetEntryData } from 'libuntar';
+import { getEntries, untar } from 'libuntar';
 
 // Fetch a raw tar file (not gzipped)
 const response = await fetch('archive.tar');
 const arrayBuffer = await response.arrayBuffer();
 
 // Extract entries from the tar
-const entries = tarGetEntries(arrayBuffer);
+const entries = getEntries(arrayBuffer);
 
 // List all files
 entries.forEach((entry) => {
@@ -76,7 +75,7 @@ entries.forEach((entry) => {
 // Extract a specific file
 const textFile = entries.find((e) => e.name === 'readme.txt');
 if (textFile) {
-	const data = tarGetEntryData(textFile, arrayBuffer);
+	const data = untar(textFile, arrayBuffer);
 	const text = new TextDecoder().decode(data);
 	console.log(text);
 }
@@ -106,7 +105,7 @@ const { arrayBuffer, nodes } = await untgz(file);
 
 ### `getEntries(arrayBuffer: ArrayBuffer)`
 
-Alias for `tarGetEntries`. Extracts entries from a raw tar ArrayBuffer.
+Alias for `getEntries`. Extracts entries from a raw tar ArrayBuffer.
 
 **Parameters:**
 
@@ -114,7 +113,7 @@ Alias for `tarGetEntries`. Extracts entries from a raw tar ArrayBuffer.
 
 **Returns:** `TarEntry[]` - Array of tar entries
 
-### `tarGetEntries(arrayBuffer: ArrayBuffer)`
+### `getEntries(arrayBuffer: ArrayBuffer)`
 
 Extracts entries from a raw tar ArrayBuffer.
 
@@ -127,19 +126,19 @@ Extracts entries from a raw tar ArrayBuffer.
 **Example:**
 
 ```typescript
-import { tarGetEntries } from 'libuntar';
+import { getEntries } from 'libuntar';
 
-const entries = tarGetEntries(tarBuffer);
+const entries = getEntries(tarBuffer);
 console.log(`Found ${entries.length} entries`);
 ```
 
-### `tarGetEntryData(entry: TarEntry, arrayBuffer: ArrayBuffer)`
+### `untar(entry: TarEntry, arrayBuffer: ArrayBuffer)`
 
 Extracts the raw data for a specific entry.
 
 **Parameters:**
 
-- `entry`: A `TarEntry` object from `tarGetEntries` or `untgz`
+- `entry`: A `TarEntry` object from `getEntries` or `untgz`
 - `arrayBuffer`: The tar ArrayBuffer
 
 **Returns:** `Uint8Array` - The raw file data
@@ -147,7 +146,7 @@ Extracts the raw data for a specific entry.
 **Example:**
 
 ```typescript
-const data = tarGetEntryData(entry, arrayBuffer);
+const data = untar(entry, arrayBuffer);
 
 // For text files
 const text = new TextDecoder().decode(data);

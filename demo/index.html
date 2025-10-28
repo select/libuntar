@@ -240,7 +240,7 @@
 			// untgz: decompress and extract tar.gz in one step
 			// getEntries: extract entries from a raw tar ArrayBuffer
 			import { untgz, getEntries } from '../dist/untgz.js';
-			import { tarGetEntryData } from '../dist/libuntar.js';
+			import { untar } from '../dist/libuntar.js';
 
 			let currentArchive = null;
 
@@ -351,7 +351,7 @@
 				const entry = currentArchive.entries.find((e) => e.name === fileName);
 				if (!entry) return;
 
-				const data = tarGetEntryData(entry, currentArchive.arrayBuffer);
+				const data = untar(entry, currentArchive.arrayBuffer);
 				const content = new TextDecoder().decode(data);
 
 				const viewerDiv = document.getElementById('contentViewer');
