@@ -40,6 +40,44 @@
 				box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 			}
 
+			.topbar {
+				display: flex;
+				justify-content: space-between;
+				align-items: flex-start;
+				gap: 1rem;
+				flex-wrap: wrap;
+				margin-bottom: 1rem;
+			}
+
+			.topbar h1 {
+				margin-bottom: 0;
+			}
+
+			.actions {
+				display: flex;
+				gap: 0.5rem;
+				flex-shrink: 0;
+			}
+
+			.actions a {
+				display: inline-block;
+				padding: 0.5rem 1rem;
+				border: 1px solid #007bff;
+				color: #007bff;
+				border-radius: 4px;
+				text-decoration: none;
+				font-size: 0.875rem;
+				font-weight: 500;
+				transition:
+					background 0.2s,
+					color 0.2s;
+			}
+
+			.actions a:hover {
+				background: #007bff;
+				color: white;
+			}
+
 			.upload-section {
 				margin-bottom: 2rem;
 				padding: 1.5rem;
@@ -243,21 +281,29 @@
 	</head>
 	<body>
 		<div class="container">
-			<h1>🗜️ libuntar Demo</h1>
-			<p>
-				Extract and view files from .tar.gz archives in the browser using native
-				JavaScript APIs.
-			</p>
-			<p style="margin-top: 0.5rem">
-				<a
-					href="https://github.com/select/libuntar"
-					target="_blank"
-					rel="noopener noreferrer"
-					style="color: #007bff; text-decoration: none"
-				>
-					View on GitHub →
-				</a>
-			</p>
+			<div class="topbar">
+				<div>
+					<h1>🗜️ libuntar Demo</h1>
+					<p>
+						Extract and view files from .tar.gz archives in the browser using
+						native JavaScript APIs.
+					</p>
+				</div>
+				<div class="actions">
+					<a
+						href="https://github.com/select/libuntar"
+						target="_blank"
+						rel="noopener noreferrer"
+						>GitHub</a
+					>
+					<a
+						href="https://www.npmjs.com/package/libuntar"
+						target="_blank"
+						rel="noopener noreferrer"
+						>npm</a
+					>
+				</div>
+			</div>
 
 			<div class="info">
 				<strong>Try it out:</strong> Upload a .tar.gz file or use the sample
