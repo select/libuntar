@@ -56,7 +56,7 @@
 	"bugs": {
 		"url": "https://github.com/select/libuntar/issues"
 	},
-	"homepage": "https://github.com/select/libuntar#readme",
+	"homepage": "https://select.github.io/libuntar/",
 	"license": "MIT",
 	"packageManager": "pnpm@10.19.0",
 	"devDependencies": {
