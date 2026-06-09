@@ -17,7 +17,7 @@
 			"require": "./dist/untgz.cjs"
 		}
 	},
-	"files": ["dist"],
+	"files": ["dist", "README.md", "CHANGELOG.md", "LICENSE"],
 	"scripts": {
 		"test": "vitest run",
 		"test:watch": "vitest",
@@ -28,7 +28,9 @@
 		"build": "vite build && tsc --emitDeclarationOnly --outDir dist && pnpm run copy-to-demo",
 		"copy-to-demo": "cp dist/libuntar.js dist/untgz.js demo/",
 		"typecheck": "tsc --noEmit",
-		"prepublishOnly": "pnpm run build"
+		"test:all": "pnpm run lint && pnpm run typecheck && pnpm test",
+		"prepublishOnly": "pnpm run build",
+		"release": "GITHUB_TOKEN=$(gh auth token) release-it"
 	},
 	"type": "module",
 	"keywords": [
@@ -41,7 +43,15 @@
 		"browser",
 		"typescript"
 	],
-	"author": "",
+	"author": "select",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/select/libuntar.git"
+	},
+	"bugs": {
+		"url": "https://github.com/select/libuntar/issues"
+	},
+	"homepage": "https://github.com/select/libuntar#readme",
 	"license": "MIT",
 	"packageManager": "pnpm@10.19.0",
 	"devDependencies": {
@@ -50,6 +60,8 @@
 		"prettier": "^3.6.2",
 		"typescript": "^5.9.3",
 		"vite": "^7.1.12",
-		"vitest": "^4.0.4"
+		"vitest": "^4.0.4",
+		"@release-it/conventional-changelog": "11.0.1",
+		"release-it": "20.2.0"
 	}
 }
