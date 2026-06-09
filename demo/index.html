@@ -198,6 +198,47 @@
 				border-radius: 4px;
 				margin-bottom: 1rem;
 			}
+
+			.usage {
+				background: white;
+				padding: 2rem;
+				border-radius: 8px;
+				box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+				margin-top: 2rem;
+			}
+
+			.usage h2 {
+				margin-top: 0;
+			}
+
+			.usage h3 {
+				color: #555;
+				margin-top: 1.5rem;
+				margin-bottom: 0.5rem;
+				font-size: 1rem;
+			}
+
+			.usage pre {
+				background: #2d2d2d;
+				color: #f8f8f2;
+				padding: 1rem;
+				border-radius: 4px;
+				overflow-x: auto;
+				font-family: 'Courier New', monospace;
+				font-size: 0.85rem;
+				line-height: 1.5;
+			}
+
+			.usage code {
+				font-family: 'Courier New', monospace;
+			}
+
+			.usage p code {
+				background: #f0f0f0;
+				padding: 0.1rem 0.35rem;
+				border-radius: 3px;
+				font-size: 0.85rem;
+			}
 		</style>
 	</head>
 	<body>
@@ -243,6 +284,44 @@
 			<div id="contentViewer" style="display: none"></div>
 
 			<div id="error" class="error" style="display: none"></div>
+		</div>
+
+		<div class="usage">
+			<h2>Usage</h2>
+			<p>Install from npm (or copy the source files directly):</p>
+			<pre><code>npm install libuntar</code></pre>
+
+			<h3>Extract a .tar.gz archive</h3>
+			<pre><code>import { untgz, untar } from 'libuntar/untgz';
+
+const blob = await (await fetch('archive.tar.gz')).blob();
+const { arrayBuffer, entries } = await untgz(blob);
+
+// List entries
+entries.forEach((e) =&gt; console.log(e.name, e.size, e.isFile));
+
+// Read one file
+const entry = entries.find((e) =&gt; e.name === 'readme.txt');
+const text = new TextDecoder().decode(untar(entry, arrayBuffer));</code></pre>
+
+			<h3>Extract a raw .tar archive</h3>
+			<pre><code>import { getEntries, untar } from 'libuntar';
+
+const arrayBuffer = await (await fetch('archive.tar')).arrayBuffer();
+const entries = getEntries(arrayBuffer);
+const data = untar(entries[0], arrayBuffer);</code></pre>
+
+			<p>
+				See the
+				<a
+					href="https://github.com/select/libuntar#readme"
+					target="_blank"
+					rel="noopener noreferrer"
+					style="color: #007bff; text-decoration: none"
+					>full README and API reference</a
+				>
+				for details.
+			</p>
 		</div>
 
 		<script type="module">
