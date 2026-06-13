@@ -6,12 +6,21 @@ Extract files from .tar and tar.gz archives in the browser (or node) using nativ
 [![Bundle size](https://img.shields.io/bundlephobia/minzip/libuntar)](https://bundlephobia.com/package/libuntar)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+## Browser playground
+
+**[▶ Try it live: select.github.io/libuntar](https://select.github.io/libuntar/)**
+
+A zero-backend demo lives in [`demo/`](demo/) and is served via GitHub Pages.
+Drop in a `.tar` or `.tar.gz` file and the library extracts and lists its
+contents entirely client-side using native browser APIs. Deployed automatically
+on each `v*.*.*` release tag
+([`deploy-to-pages.yml`](.github/workflows/deploy-to-pages.yml)).
 
 ## Installation
 
 This lib is so small you may just want to copy the source files directly into your project.
-- [libuntar.ts](./libuntar.ts) / [libuntar.js](./dist/libuntar.js)
-- [untgz.ts](./untgz.ts) / [untgz.js](./dist/untgz.js)
+- [libuntar.ts](./libuntar.ts)
+- [untgz.ts](./untgz.ts)
 
 Alternatively, you can install via pnpm, npm, or yarn:
 
